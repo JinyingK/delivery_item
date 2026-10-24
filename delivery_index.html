@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>送货清单 Delivery Checklist</title>
+    <style>
+        :root {
+            font-family: Arial, sans-serif;
+            color: #202733;
+            background: #f4f6f8;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+        }
+
+        .app {
+            max-width: 850px;
+            margin: auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            gap: 12px;
+        }
+
+        h1 {
+            font-size: 30px;
+            margin: 0;
+        }
+
+        .sub {
+            color: #667085;
+            margin-top: 4px;
+        }
+
+        .pill {
+            background: #e8eefc;
+            color: #3156a5;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .stat,
+        .panel {
+            background: white;
+            border: 1px solid #e3e7ed;
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 14px;
+        }
+
+        .stat span,
+        .label {
+            color: #667085;
+            font-size: 13px;
+        }
+
+        .num {
+            font-size: 32px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin: 0 0 12px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 86px;
+            border: 1px solid #cbd2dc;
+            border-radius: 10px;
+            padding: 12px;
+            font: inherit;
+        }
+
+        .hint,
+        .notice {
+            color: #667085;
+            font-size: 13px;
+            margin: 10px 0;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            font: inherit;
+            font-weight: bold;
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            cursor: pointer;
+        }
+
+        .primary {
+            background: #2458d3;
+            color: white;
+        }
+
+        .secondary {
+            background: #edf0f4;
+            color: #303846;
+        }
+
+        .danger {
+            background: #fff0ef;
+            color: #a62d25;
+        }
+
+        button:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        .listhead {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .count {
+            color: #667085;
+            font-size: 13px;
+        }
+
+        .items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .item {
+            display: grid;
+            grid-template-columns: 30px minmax(0, 1fr) 70px 70px;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border: 1px solid #e3e7ed;
+            border-radius: 12px;
+            background: white;
+        }
+
+        .item.done {
+            background: #f0f2f4;
+            color: #8b929c;
+        }
+
+        .item.done .address {
+            text-decoration: line-through;
+        }
+
+        .check {
+            width: 22px;
+            height: 22px;
+            accent-color: #2458d3;
+        }
+
+        .address {
+            font-size: 17px;
+            font-weight: bold;
+            overflow-wrap: anywhere;
+        }
+
+        .qty {
+            text-align: left;
+            font-size: 18px;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            width: 100%;
+        }
+
+        .status {
+            font-size: 12px;
+            color: #667085;
+            white-space: nowrap;
+        }
+
+        .delete {
+            padding: 7px;
+            background: transparent;
+            color: #9b3b35;
+        }
+
+        .empty {
+            text-align: center;
+            color: #77808d;
+            padding: 28px 8px;
+        }
+
+        @media(max-width:520px) {
+            body {
+                padding: 12px;
+            }
+
+            .item {
+                grid-template-columns: 26px minmax(0, 1fr) 55px 55px;
+                gap: 6px;
+                padding: 9px;
+            }
+
+            .stat,
+            .panel {
+                padding: 14px;
+            }
+        }
+
+        .list-header {
+            background: #edf0f4;
+            font-weight: bold;
+            color: #303846;
+            border: none;
+        }
+
+        .list-header .qty {
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <header>
+            <div>
+                <h1>送货清单</h1>
+                <div class="sub">Delivery Checklist</div>
+            </div>
+            <div class="pill">本机保存</div>
+        </header>
+
+        <div class="stats">
+            <div class="stat">
+                <span>待送货</span>
+                <div class="num" id="pending">0</div>
+            </div>
+            <div class="stat">
+                <span>已送达</span>
+                <div class="num" id="delivered">0</div>
+            </div>
+        </div>
+
+        <section class="panel">
+            <h2>添加送货项目</h2>
+            <textarea id="entry" placeholder="每行一项，例如：&#10;12345,1&#10;23456,2&#10;34567,1"></textarea>
+            <div class="hint">格式：地址编号,份量。可以一次输入多行。</div>
+            <div class="actions">
+                <button class="primary" id="add">＋ 添加到清单</button>
+                <button class="secondary" id="undo" disabled>撤销删除</button>
+            </div>
+            <div class="notice" id="message" role="status"></div>
+        </section>
+
+        <section class="panel">
+
+            <div class="listhead">
+                <h2 style="margin:0">今日送货列表</h2>
+                <div class="count" id="count">0 项</div>
+            </div>
+
+            <div class="item list-header">
+                <div></div>
+                <div>送货地址</div>
+                <div class="qty">份量</div>
+                <div></div>
+            </div>
+
+            <div class="items" id="items"></div>
+
+            <div class="actions" style="margin-top:14px">
+                <button class="danger" id="clear">清空清单</button>
+            </div>
+            <div class="notice">勾选项目即可标记已送达，再次勾选可恢复。清单保存在当前浏览器。</div>
+        </section>
+    </div>
+
+    <script>
+        const KEY = 'delivery-checklist-v1';
+        const $ = id => document.getElementById(id);
+
+        let items = [];
+        let deleted = [];
+
+        try {
+            items = JSON.parse(localStorage.getItem(KEY) || '[]');
+            if (!Array.isArray(items)) items = [];
+        } catch (e) {
+            items = [];
+        }
+
+        function save() {
+            try {
+                localStorage.setItem(KEY, JSON.stringify(items));
+            } catch (e) {
+                $('message').textContent = '保存失败，请检查浏览器设置。';
+            }
+        }
+
+        function sortItems() {
+            // 保持送货项目的输入顺序
+        }
+
+        function render() {
+            sortItems();
+
+            const pending = items.filter(item => !item.done).length;
+            $('pending').textContent = pending;
+            $('delivered').textContent = items.length - pending;
+            $('count').textContent = items.length + ' 项';
+            $('undo').disabled = deleted.length === 0;
+
+            const root = $('items');
+            root.replaceChildren();
+
+            if (!items.length) {
+                const empty = document.createElement('div');
+                empty.className = 'empty';
+                empty.textContent = '清单还是空的，请添加送货项目。';
+                root.append(empty);
+                return;
+            }
+
+            items.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'item' + (item.done ? ' done' : '');
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'check';
+                checkbox.checked = !!item.done;
+                checkbox.setAttribute('aria-label', '标记已送达');
+
+                checkbox.addEventListener('change', () => {
+                    item.done = checkbox.checked;
+                    save();
+                    render();
+                });
+
+
+                const address = document.createElement('div');
+                const addressValue = document.createElement('div');
+                addressValue.className = 'address';
+                addressValue.textContent = item.address;
+                address.append(addressValue);
+
+
+
+                const quantity = document.createElement('div');
+                const quantityValue = document.createElement('div');
+                quantityValue.className = 'qty';
+                quantityValue.style.textAlign = 'left';
+                quantityValue.style.fontVariantNumeric = 'tabular-nums';
+                quantityValue.textContent = item.qty;
+                quantity.append(quantityValue);
+
+
+                const right = document.createElement('div');
+                right.style.textAlign = 'right';
+
+                const status = document.createElement('div');
+                status.className = 'status';
+                status.textContent = item.done ? '已送达' : '未送达';
+
+                const del = document.createElement('button');
+                del.className = 'delete';
+                del.textContent = '删除';
+
+                del.addEventListener('click', () => {
+                    deleted.push({ ...item });
+                    items = items.filter(x => x.id !== item.id);
+                    save();
+                    $('message').textContent =
+                        '已删除地址 ' + item.address + '，可撤销恢复。';
+                    render();
+                });
+
+                right.append(status, del);
+                row.append(checkbox, address, quantity, right);
+                root.append(row);
+            });
+        }
+
+        $('add').addEventListener('click', () => {
+            const raw = $('entry').value.trim();
+
+            if (!raw) {
+                $('message').textContent = '请先输入地址编号和份量。';
+                return;
+            }
+
+            const lines = raw.split(/[\n;]+/).map(s => s.trim()).filter(Boolean);
+            const parsed = [];
+            const errors = [];
+
+            lines.forEach((line, index) => {
+                const parts = line.split(',').map(s => s.trim());
+
+                if (
+                    parts.length !== 2 ||
+                    !parts[0] ||
+                    !parts[1] ||
+                    !Number.isFinite(Number(parts[1])) ||
+                    Number(parts[1]) <= 0
+                ) {
+                    errors.push('第 ' + (index + 1) + ' 项格式不正确：' + line);
+                    return;
+                }
+
+                parsed.push({
+                    id: Date.now().toString(36) +
+                        Math.random().toString(36).slice(2, 8),
+                    address: parts[0],
+                    qty: parts[1],
+                    done: false
+                });
+            });
+
+            if (!parsed.length) {
+                $('message').textContent = errors.join('；') || '没有可添加的项目。';
+                return;
+            }
+
+            items.push(...parsed);
+            save();
+            render();
+            $('entry').value = '';
+
+            $('message').textContent =
+                '已添加 ' + parsed.length + ' 项。' +
+                (errors.length ? ' 未添加：' + errors.join('；') : '');
+        });
+
+        $('undo').addEventListener('click', () => {
+            const last = deleted.pop();
+            if (!last) return;
+
+            items.push(last);
+            save();
+            render();
+            $('message').textContent = '已恢复地址 ' + last.address + '。';
+        });
+
+        $('clear').addEventListener('click', () => {
+            if (!items.length) {
+                $('message').textContent = '清单已经是空的。';
+                return;
+            }
+
+            if (!confirm('确定清空全部送货记录吗？可以之后逐项撤销恢复。')) {
+                return;
+            }
+
+            deleted.push(...items.map(item => ({ ...item })));
+            items = [];
+            save();
+            render();
+            $('message').textContent = '清单已清空，可点击撤销删除恢复。';
+        });
+
+        render();
+    </script>
+</body>
+
+</html>
